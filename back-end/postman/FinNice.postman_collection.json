@@ -1,0 +1,64 @@
+{
+  "info": {
+    "_postman_id": "4f8f4f52-4d8d-4b84-8f4f-c8d1cbf4f1a2",
+    "name": "FinNice Auth API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection untuk testing endpoint auth FinNice backend"
+  },
+  "item": [
+    {
+      "name": "Auth - Register",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": { "type": "text/javascript", "exec": ["const ts = Date.now();", "pm.environment.set('email', `testuser_postman+${ts}@finnice.local`);"] }
+        },
+        {
+          "listen": "test",
+          "script": { "type": "text/javascript", "exec": ["pm.test('Register status is 201', function () { pm.response.to.have.status(201); });", "let r = {}; try { r = pm.response.json(); } catch (e) {}", "if (r && r.user && r.user.email) { pm.environment.set('createdEmail', r.user.email); }"] }
+        }
+      ],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"name\": \"{{name}}\"\n}" }, "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth","register"] } },
+      "response": []
+    },
+    {
+      "name": "Auth - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": { "type": "text/javascript", "exec": ["let jsonData = {};", "try { jsonData = pm.response.json(); } catch (e) {}", "pm.test('Login status is 200', function () { pm.response.to.have.status(200); });", "if (jsonData && jsonData.token) {", "  pm.environment.set('token', jsonData.token);", "  pm.test('Response contains token', function () { pm.expect(jsonData.token).to.exist; });", "}", "if (!pm.environment.get('verificationCode')) {", "  try { pm.execution.setNextRequest('Auth - Resend Verification'); } catch (e) { postman.setNextRequest('Auth - Resend Verification'); }", "}"] }
+        }
+      ],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}" }, "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] } },
+      "response": []
+    },
+    {
+      "name": "Auth - Verify Email",
+      "event": [
+        { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["if (!pm.environment.get('verificationCode')) {", "  try { pm.execution.setNextRequest('Auth - Resend Verification'); } catch (e) { postman.setNextRequest('Auth - Resend Verification'); }", "}"] } },
+        { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Verify status is 200', function () { pm.response.to.have.status(200); });", "let j = {}; try { j = pm.response.json(); } catch(e) {}", "if (j && j.success) { pm.test('Verify succeeded', function () { pm.expect(j.success).to.be.true; }); }"] } }
+      ],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{verificationCode}}\"\n}" }, "url": { "raw": "{{baseUrl}}/auth/verify", "host": ["{{baseUrl}}"], "path": ["auth","verify"] } },
+      "response": []
+    },
+    {
+      "name": "Auth - Resend Verification",
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Resend status is 200', function () { pm.response.to.have.status(200); });", "let resp = {}; try { resp = pm.response.json(); } catch (e) {}", "if (resp && resp.code) { pm.environment.set('verificationCode', resp.code); }", "pm.test('Resend response success true', function () { if (resp && typeof resp.success !== 'undefined') { pm.expect(resp.success).to.be.true; } });"] } } ],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\"\n}" }, "url": { "raw": "{{baseUrl}}/auth/resend", "host": ["{{baseUrl}}"], "path": ["auth","resend"] } },
+      "response": []
+    },
+    {
+      "name": "Auth - Profile",
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Profile status is 200', function () { pm.response.to.have.status(200); });", "let p = {}; try { p = pm.response.json(); } catch(e) {}", "if (p && p.user && p.user.email) { pm.test('Profile contains email', function() { pm.expect(p.user.email).to.exist; }); }"] } } ],
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": { "raw": "{{baseUrl}}/auth/profile", "host": ["{{baseUrl}}"], "path": ["auth","profile"] } },
+      "response": []
+    },
+    {
+      "name": "Auth - Logout",
+      "event": [ { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Logout status is 200', function () { pm.response.to.have.status(200); });"] } } ],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth","logout"] } },
+      "response": []
+    }
+  ],
+  "variable": [ { "key": "baseUrl", "value": "http://localhost:5000" }, { "key": "email", "value": "testuser_postman@finnice.local" }, { "key": "password", "value": "123456" }, { "key": "name", "value": "Postman User" }, { "key": "verificationCode", "value": "" }, { "key": "token", "value": "" } ]
+}
