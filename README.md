@@ -169,4 +169,3 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-Kalau kamu mau, saya juga bisa bantu jadikan README ini lebih singkat lagi supaya tinggal 1 halaman dan lebih mudah dibaca temanmu.
