@@ -201,4 +201,7 @@ def advice_endpoint(req: AdviceRequest):
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host='0.0.0.0', port=8001)
+    # Allow overriding host/port via environment variables to avoid port conflicts
+    host = os.environ.get('AI_SERVICE_HOST', os.environ.get('HOST', '0.0.0.0'))
+    port = int(os.environ.get('AI_SERVICE_PORT', os.environ.get('PORT', 8001)))
+    uvicorn.run(app, host=host, port=port)
