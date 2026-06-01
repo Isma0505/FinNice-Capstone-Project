@@ -33,6 +33,39 @@ const accounts = [
 
 const axios = require('axios');
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
+const AI_MODEL_SERVICE_URL = process.env.AI_MODEL_SERVICE_URL || 'http://localhost:8001';
+
+const toLowerText = (value) => String(value || '').trim().toLowerCase()
+
+const normalizePredictPayload = (payload = {}) => {
+  if (payload.amount && payload.year && payload.month && payload.day) {
+    return payload
+  }
+
+  const tx = payload.transaction || payload
+  const amount = Number(tx.amount || 0)
+  const txDate = tx.date ? new Date(tx.date) : new Date()
+  const category = toLowerText(tx.category)
+  const accountText = toLowerText(tx.account || tx.accountType || tx.provider || tx.source)
+  const txType = toLowerText(tx.type)
+
+  return {
+    amount,
+    year: txDate.getFullYear(),
+    month: txDate.getMonth() + 1,
+    day: txDate.getDate(),
+    'category_Bills & Fees': category === 'tagihan' || category === 'bills & fees' || category === 'bills',
+    'category_Food & Drinks': category === 'makanan' || category === 'food' || category === 'food & drinks',
+    category_Transport: category === 'transportasi' || category === 'transport',
+    account_Cash: accountText.includes('cash') || accountText.includes('tunai') || accountText.includes('dompet') || accountText === '',
+    'account_Metro Card': accountText.includes('metro'),
+    'account_Salary Bank': accountText.includes('salary'),
+    'account_Savings Bank': accountText.includes('saving') || accountText.includes('tabungan'),
+    type_EXPENSE: txType === 'expense',
+    type_INCOME: txType === 'income',
+    type_TRANSFER: txType === 'transfer',
+  }
+}
 
 const buildAdviceText = ({ locale, overBudgetItems, nearLimitItems, savings, savingsPercent }) => {
   if (overBudgetItems.length > 0) {
@@ -112,15 +145,43 @@ const getTotalIncome = () => transactions.filter((transaction) => transaction.ty
 
 const getTotalExpense = () => transactions.filter((transaction) => transaction.type === 'expense').reduce((sum, transaction) => sum + transaction.amount, 0)
 
-const computeLocalAdvice = (incomingBudgets, incomingTransactions, locale = 'id') => {
+// Enhanced fallback advice computation.
+// This async version will try to annotate incoming transactions with AI model
+// predictions (if AI model service is reachable). If predictions are available
+// we include anomaly information in the advice/suggestion text.
+const computeLocalAdvice = async (incomingBudgets, incomingTransactions, locale = 'id') => {
   const budgetSource = Array.isArray(incomingBudgets) && incomingBudgets.length > 0 ? incomingBudgets : budgets
   const transactionSource = Array.isArray(incomingTransactions) && incomingTransactions.length > 0 ? incomingTransactions : transactions
+
+  // Try to call AI model service to get predictions for each transaction.
+  let annotatedTransactions = transactionSource
+  try {
+    // Call prediction endpoint in parallel for each transaction (best-effort).
+    const predPromises = transactionSource.map(async (tx) => {
+      try {
+        const modelPayload = normalizePredictPayload({ transaction: tx })
+        const resp = await axios.post(`${AI_MODEL_SERVICE_URL}/predict`, { named_features: modelPayload }, { timeout: 3000 })
+        // Resp should follow the AI model response shape: { success: true, data: { prediction: [...], probabilities: [...] } }
+        const pred = resp?.data?.data?.prediction ? resp.data.data.prediction[0] : null
+        const proba = resp?.data?.data?.probabilities ? resp.data.data.probabilities[0] : null
+        return { ...tx, aiPrediction: pred, aiProbabilities: proba }
+      } catch (err) {
+        return { ...tx }
+      }
+    })
+
+    const results = await Promise.all(predPromises)
+    annotatedTransactions = results
+  } catch (err) {
+    // If any unexpected error occurs, fall back to original transactions
+    annotatedTransactions = transactionSource
+  }
 
   const overBudgetItems = []
   const nearLimitItems = []
 
   budgetSource.forEach((budget) => {
-    const spent = transactionSource
+    const spent = annotatedTransactions
       .filter((transaction) => transaction.type === 'expense' && transaction.category === budget.category)
       .reduce((sum, transaction) => sum + transaction.amount, 0)
 
@@ -133,11 +194,11 @@ const computeLocalAdvice = (incomingBudgets, incomingTransactions, locale = 'id'
     }
   })
 
-  const totalIncome = transactionSource
+  const totalIncome = annotatedTransactions
     .filter((transaction) => transaction.type === 'income')
     .reduce((sum, transaction) => sum + transaction.amount, 0)
 
-  const totalExpense = transactionSource
+  const totalExpense = annotatedTransactions
     .filter((transaction) => transaction.type === 'expense')
     .reduce((sum, transaction) => sum + transaction.amount, 0)
 
@@ -145,10 +206,17 @@ const computeLocalAdvice = (incomingBudgets, incomingTransactions, locale = 'id'
   const savingsPercent = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
   const advice = buildAdviceText({ locale, overBudgetItems, nearLimitItems, savings, savingsPercent })
 
+  // Check for model-detected anomalies and append a hint to suggestion if any
+  const anomalyCount = annotatedTransactions.filter((t) => t.aiPrediction !== null && (t.aiPrediction === 1 || (Array.isArray(t.aiPrediction) && t.aiPrediction[0] === 1))).length
+  let finalSuggestion = advice.suggestion || ''
+  if (anomalyCount > 0) {
+    finalSuggestion = `${finalSuggestion} ${locale === 'id' ? `Terdeteksi ${anomalyCount} transaksi mencurigakan — cek kembali.` : `Detected ${anomalyCount} suspicious transactions — please review.`}`.trim()
+  }
+
   return {
     success: true,
     data: {
-      advice: { ...advice },
+      advice: { ...advice, suggestion: finalSuggestion },
       summary: {
         totalIncome,
         totalExpense,
@@ -174,9 +242,75 @@ const getAiAdvice = async (req, res) => {
     console.warn('AI service proxy failed, falling back to local logic:', err.message || err)
   }
 
-  // Fallback to local computation
-  const local = computeLocalAdvice(incomingBudgets, incomingTransactions, locale)
-  return res.json(local)
+  // Fallback to local computation (now async and may include model predictions)
+  try {
+    const local = await computeLocalAdvice(incomingBudgets, incomingTransactions, locale)
+    return res.json(local)
+  } catch (err) {
+    // If something unexpected happens, return a safe error response
+    console.warn('computeLocalAdvice failed:', err && err.message ? err.message : err)
+    return res.status(500).json({ success: false, message: 'Failed to compute advice' })
+  }
+}
+
+const getAiModelStatus = async (req, res) => {
+  try {
+    const [healthResponse, metadataResponse] = await Promise.all([
+      axios.get(`${AI_MODEL_SERVICE_URL}/health`, { timeout: 3000 }),
+      axios.get(`${AI_MODEL_SERVICE_URL}/metadata`, { timeout: 3000 }),
+    ])
+
+    return res.json({
+      success: true,
+      data: {
+        health: healthResponse.data,
+        metadata: metadataResponse.data,
+      },
+      serviceUrl: AI_MODEL_SERVICE_URL,
+    })
+  } catch (err) {
+    return res.status(503).json({
+      success: false,
+      message: 'AI Model service is unavailable',
+      serviceUrl: AI_MODEL_SERVICE_URL,
+      detail: err.message || 'Failed to connect to AI Model service',
+    })
+  }
+}
+
+const getAiModelPrediction = async (req, res) => {
+  try {
+    const modelPayload = normalizePredictPayload(req.body || {})
+    const response = await axios.post(
+      `${AI_MODEL_SERVICE_URL}/predict`,
+      { named_features: modelPayload },
+      { timeout: 5000 }
+    )
+    return res.json(response.data)
+  } catch (err) {
+    const status = err?.response?.status || 502
+    const message = err?.response?.data?.detail || err?.message || 'Failed to get prediction from AI Model service'
+    return res.status(status).json({
+      success: false,
+      message,
+      serviceUrl: AI_MODEL_SERVICE_URL,
+    })
+  }
+}
+
+const getAiModelRecommendation = async (req, res) => {
+  try {
+    const response = await axios.post(`${AI_MODEL_SERVICE_URL}/advice`, req.body || {}, { timeout: 7000 })
+    return res.json(response.data)
+  } catch (err) {
+    const status = err?.response?.status || 502
+    const message = err?.response?.data?.detail || err?.message || 'Failed to get recommendation from AI Model service'
+    return res.status(status).json({
+      success: false,
+      message,
+      serviceUrl: AI_MODEL_SERVICE_URL,
+    })
+  }
 }
 
 const getSummary = (req, res) => {
@@ -223,4 +357,7 @@ module.exports = {
   getBudgets,
   getAccounts,
   getAiAdvice,
+  getAiModelStatus,
+  getAiModelPrediction,
+  getAiModelRecommendation,
 }

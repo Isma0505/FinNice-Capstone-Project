@@ -19,6 +19,18 @@ npm run dev
 - `GET /auth/profile`
 - `POST /auth/logout`
 
+## Endpoint finance + AI
+
+- `POST /finance/advice` (fallback ke local rule jika AI service tidak aktif)
+- `GET /finance/ai/status` (cek status AI Model service)
+- `POST /finance/ai/predict` (proxy prediksi transaksi ke AI Model)
+- `POST /finance/ai/recommend` (proxy rekomendasi ke AI Model)
+
+## Environment variable tambahan
+
+- `AI_SERVICE_URL` default `http://localhost:8001` untuk endpoint advice
+- `AI_MODEL_SERVICE_URL` default `http://localhost:8001` untuk endpoint model AI service terbaru
+
 ## File penting
 
 - `src/auth.js` - semua logika auth ada di sini

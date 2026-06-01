@@ -9,5 +9,8 @@ router.get('/transactions', auth.verifyToken, asyncWrapper.wrap(financeControlle
 router.get('/budgets', auth.verifyToken, asyncWrapper.wrap(financeController.getBudgets))
 router.get('/accounts', auth.verifyToken, asyncWrapper.wrap(financeController.getAccounts))
 router.post('/advice', asyncWrapper.wrap(financeController.getAiAdvice))
+router.get('/ai/status', asyncWrapper.wrap(financeController.getAiModelStatus))
+router.post('/ai/predict', asyncWrapper.wrap(financeController.getAiModelPrediction))
+router.post('/ai/recommend', asyncWrapper.wrap(financeController.getAiModelRecommendation))
 
 module.exports = router

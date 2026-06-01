@@ -27,7 +27,10 @@ app.get('/', (req, res) => {
       transactions: 'GET /finance/transactions (perlu token)',
       budgets: 'GET /finance/budgets (perlu token)',
       accounts: 'GET /finance/accounts (perlu token)',
-      aiAdvice: 'POST /finance/advice'
+      aiAdvice: 'POST /finance/advice',
+      aiModelStatus: 'GET /finance/ai/status',
+      aiModelPredict: 'POST /finance/ai/predict',
+      aiModelRecommend: 'POST /finance/ai/recommend'
     }
   });
 });

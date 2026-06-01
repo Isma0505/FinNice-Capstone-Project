@@ -194,7 +194,9 @@ export const getTransactions = async () => {
 
 export const addTransaction = async (transaction) => {
   const data = getData();
-  const newTx = { id: Date.now(), ...transaction };
+  const baseTx = { id: Date.now(), ...transaction };
+  const predictedTx = await enrichTransactionWithAIPrediction(baseTx);
+  const newTx = predictedTx;
   data.transactions = [newTx, ...data.transactions];
   saveData(data);
   
@@ -202,6 +204,21 @@ export const addTransaction = async (transaction) => {
   await updateAccountBalances();
   
   return { error: false, data: newTx };
+};
+
+const enrichTransactionWithAIPrediction = async (transaction) => {
+  try {
+    const prediction = await postJson('/finance/ai/predict', { transaction });
+    if (prediction.error) return transaction;
+
+    return {
+      ...transaction,
+      aiPrediction: prediction.data,
+      aiPredictedAt: new Date().toISOString(),
+    };
+  } catch {
+    return transaction;
+  }
 };
 
 export const deleteTransaction = async (id) => {
@@ -310,5 +327,34 @@ export const getAIAdvice = async ({ budgets = [], transactions = [], locale = 'i
     return await postJson('/finance/advice', { budgets, transactions, locale });
   } catch (error) {
     return { error: true, message: error.message };
+  }
+};
+
+export const getAIModelStatus = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/finance/ai/status`);
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      return { error: true, message: result.message || 'AI model status check failed' };
+    }
+    return { error: false, data: result.data };
+  } catch (error) {
+    return { error: true, message: error.message || 'Network error' };
+  }
+};
+
+export const predictTransactionAI = async (transactionPayload = {}) => {
+  try {
+    return await postJson('/finance/ai/predict', transactionPayload);
+  } catch (error) {
+    return { error: true, message: error.message || 'Failed to predict transaction' };
+  }
+};
+
+export const getAIRecommendation = async (recommendationPayload = {}) => {
+  try {
+    return await postJson('/finance/ai/recommend', recommendationPayload);
+  } catch (error) {
+    return { error: true, message: error.message || 'Failed to get AI recommendation' };
   }
 };
