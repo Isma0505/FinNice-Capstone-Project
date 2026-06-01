@@ -4,7 +4,6 @@ import LoginInput from '../components/auth/LoginInput';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { FiGlobe } from 'react-icons/fi';
 import { HiOutlineLanguage } from 'react-icons/hi2';
-import { DEMO_EMAIL, DEMO_PASSWORD } from '../utils/api';
 
 function LoginPage({ onLogin, onSwitchToRegister }) {
   const { locale, toggleLocale } = useLocale();
@@ -45,12 +44,6 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
           </div>
           <h1>FinNice</h1>
           <p>{locale === 'id' ? 'Kelola keuangan pribadi Anda dengan cerdas' : 'Manage your personal finances smartly'}</p>
-        </div>
-
-        <div style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border)', background: 'var(--accent-dim)', fontSize: '13px', color: 'var(--text-secondary)' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>{locale === 'id' ? 'Akun demo siap pakai:' : 'Ready-to-use demo account:'}</strong>
-          <div style={{ marginTop: '6px' }}>Email: {DEMO_EMAIL}</div>
-          <div>Password: {DEMO_PASSWORD}</div>
         </div>
 
         <LoginInput onLogin={onLogin} />
