@@ -35,6 +35,8 @@ Jalankan langkah ini dari folder utama project.
 
 ```bash
 cd back-end
+npm install -g nodemon
+npm --prefix src install dotenv
 npm install
 ```
 
