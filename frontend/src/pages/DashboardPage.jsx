@@ -52,6 +52,16 @@ function DashboardPage() {
 
   const filteredTransactions = getFilteredTransactions();
 
+  console.log('📊 === DEBUG DASHBOARD ===');
+  console.log('Total transaksi dari API:', transactions.length);
+  console.log('Transaksi pemasukan:', transactions.filter(t => t.type === 'income').length);
+  console.log('Transaksi pengeluaran:', transactions.filter(t => t.type === 'expense').length);
+  console.log('selectedMonth:', selectedMonth);
+  console.log('selectedYear:', selectedYear);
+  console.log('Filtered transaksi:', filteredTransactions.length);
+  console.log('Filtered expense:', filteredTransactions.filter(t => t.type === 'expense').length);
+  console.log('Total expense dari filtered:', filteredTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0));
+
   // Data untuk statistik
   const totalIncome = getTotalIncome(filteredTransactions);
   const totalExpense = getTotalExpense(filteredTransactions);
@@ -75,9 +85,8 @@ function DashboardPage() {
           return txDate.getMonth() === date.getMonth() && txDate.getFullYear() === date.getFullYear();
         });
         
-        const income = monthTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
-        const expense = monthTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
-        
+        const income = monthTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+        const expense = monthTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
         result.push({ month: monthName, income, expense });
       }
     } else {
@@ -101,11 +110,11 @@ function DashboardPage() {
     return result;
   };
 
-  // Data untuk pie chart (kategori pengeluaran periode ini)
   const expenseByCategory = {};
   filteredTransactions.forEach(tx => {
     if (tx.type === 'expense') {
-      expenseByCategory[tx.category] = (expenseByCategory[tx.category] || 0) + tx.amount;
+      const amount = Number(tx.amount) || 0;
+      expenseByCategory[tx.category] = (expenseByCategory[tx.category] || 0) + amount;
     }
   });
 
@@ -132,9 +141,8 @@ function DashboardPage() {
           return txDate.getMonth() === date.getMonth() && txDate.getFullYear() === date.getFullYear();
         });
         
-        const income = monthTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
-        const expense = monthTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
-        
+        const income = monthTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+        const expense = monthTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
         result.push({ month: monthName, income, expense, savings: income - expense });
       }
     } else {

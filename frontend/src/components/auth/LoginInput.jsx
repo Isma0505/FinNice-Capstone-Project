@@ -4,7 +4,7 @@ import useInput from '../../hooks/useInput';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { DEMO_EMAIL, DEMO_PASSWORD } from '../../utils/api';
 
-function LoginInput({ onLogin }) {
+function LoginInput({ onLogin, loading }) {  // ← tambah loading prop
   const { locale } = useLocale();
   const [email, onEmailChange] = useInput('');
   const [password, onPasswordChange] = useInput('');
@@ -13,6 +13,7 @@ function LoginInput({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('🔵 LoginInput submitting:', { email, password, rememberMe }); // ← TAMBAHKAN INI
     onLogin({ email, password, rememberMe });
   };
 
@@ -79,8 +80,8 @@ function LoginInput({ onLogin }) {
         </button>
       </div>
       
-      <button type="submit" className="btn-primary">
-        {locale === 'id' ? 'Masuk' : 'Login'}
+      <button type="submit" className="btn-primary" disabled={loading}>
+        {loading ? (locale === 'id' ? 'Memproses...' : 'Processing...') : (locale === 'id' ? 'Masuk' : 'Login')}
       </button>
     </form>
   );

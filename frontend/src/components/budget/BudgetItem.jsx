@@ -3,8 +3,8 @@ import { formatRupiah } from '../../utils/helpers';
 
 function BudgetItem({ budget, spent }) {
   const { locale } = useLocale();
-  const percent = budget.limit > 0 ? Math.min(100, Math.round((spent / budget.limit) * 100)) : 0;
-  const isOver = spent > budget.limit;
+  const percent = budget.limit > 0 ? Math.min(100, Math.round((spent / Number(budget.limit)) * 100)) : 0;
+  const isOver = spent > Number(budget.limit);
 
   return (
     <div className="stat-card">

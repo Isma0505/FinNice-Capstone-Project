@@ -125,11 +125,13 @@ function AppContent() {
   }, [theme]);
 
   const handleLogin = (userData) => {
+    console.log('🔍 App.jsx handleLogin received:', userData);
     setIsLoggedIn(true);
     setUser(userData);
     localStorage.setItem('finnice_user', JSON.stringify(userData));
     setActiveUserData(userData);
     navigate('/');
+    window.location.reload(); // ← TAMBAHKAN INI
   };
 
   const handleRegister = (userData) => {
@@ -143,10 +145,10 @@ function AppContent() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('finnice_user');
     setIsLoggedIn(false);
     setUser(null);
-    localStorage.removeItem('finnice_user');
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   // Fungsi buat dapetin avatar aktif

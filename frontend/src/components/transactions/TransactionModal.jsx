@@ -59,7 +59,7 @@ function TransactionModal({ isOpen, onClose, onSubmit, initialData, isEdit }) {
       type: formData.type,
       category: formData.category,
       description: formData.description,
-      amount: parseInt(formData.amount),
+      amount: Math.round(Number(String(formData.amount).replace(/[^0-9]/g, ''))),
       date: formData.date,
       icon: cat.icon,
       color: cat.color,
