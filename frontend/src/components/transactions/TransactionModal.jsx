@@ -59,7 +59,7 @@ function TransactionModal({ isOpen, onClose, onSubmit, initialData, isEdit }) {
       type: formData.type,
       category: formData.category,
       description: formData.description,
-      amount: parseInt(formData.amount),
+      amount: Math.round(Number(String(formData.amount).replace(/[^0-9]/g, ''))),
       date: formData.date,
       icon: cat.icon,
       color: cat.color,
@@ -92,16 +92,20 @@ function TransactionModal({ isOpen, onClose, onSubmit, initialData, isEdit }) {
 
         <div className="input-group">
           <select name="category" value={formData.category} onChange={handleChange} required>
-            <option value="Makanan">Makanan</option>
-            <option value="Transportasi">Transportasi</option>
-            <option value="Belanja">Belanja</option>
-            <option value="Tagihan">Tagihan</option>
-            <option value="Hiburan">Hiburan</option>
-            <option value="Kesehatan">Kesehatan</option>
-            <option value="Pendidikan">Pendidikan</option>
-            <option value="Gaji">Gaji</option>
-            <option value="Freelance">Freelance</option>
-            <option value="Investasi">Investasi</option>
+            {[
+              { key: 'Makanan', id: 'Makanan', en: 'Food' },
+              { key: 'Transportasi', id: 'Transportasi', en: 'Transport' },
+              { key: 'Belanja', id: 'Belanja', en: 'Shopping' },
+              { key: 'Tagihan', id: 'Tagihan', en: 'Bills & Fees' },
+              { key: 'Hiburan', id: 'Hiburan', en: 'Entertainment' },
+              { key: 'Kesehatan', id: 'Kesehatan', en: 'Health' },
+              { key: 'Pendidikan', id: 'Pendidikan', en: 'Education' },
+              { key: 'Gaji', id: 'Gaji', en: 'Salary' },
+              { key: 'Freelance', id: 'Freelance', en: 'Freelance' },
+              { key: 'Investasi', id: 'Investasi', en: 'Investment' },
+            ].map(cat => (
+              <option key={cat.key} value={cat.key}>{locale === 'id' ? cat.id : cat.en}</option>
+            ))}
           </select>
         </div>
 

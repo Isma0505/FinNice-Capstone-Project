@@ -1,14 +1,36 @@
+import { useState } from 'react';
 import { useLocale } from '../contexts/LocaleContext';
 import { useTheme } from '../contexts/ThemeContext';
 import LoginInput from '../components/auth/LoginInput';
+import { login } from '../utils/api';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { FiGlobe } from 'react-icons/fi';
 import { HiOutlineLanguage } from 'react-icons/hi2';
-import { DEMO_EMAIL, DEMO_PASSWORD } from '../utils/api';
 
 function LoginPage({ onLogin, onSwitchToRegister }) {
   const { locale, toggleLocale } = useLocale();
   const { theme, toggleTheme } = useTheme();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (credentials) => {
+    console.log('🟢 LoginPage received credentials:', credentials); // ← TAMBAHKAN INI
+    setLoading(true);
+    setError('');
+    
+    const result = await login(credentials);
+    console.log('🟡 Login API result:', result); // ← TAMBAHKAN INI
+    
+    if (result.success && result.token) {
+      const userData = { ...result.user, token: result.token };
+      console.log('🔴 Calling onLogin with:', userData); // ← TAMBAHKAN INI
+      onLogin(userData);
+    } else {
+      setError(result.message || 'Login gagal');
+    }
+    
+    setLoading(false);
+  };
 
   return (
     <div className="auth-container">
@@ -47,13 +69,22 @@ function LoginPage({ onLogin, onSwitchToRegister }) {
           <p>{locale === 'id' ? 'Kelola keuangan pribadi Anda dengan cerdas' : 'Manage your personal finances smartly'}</p>
         </div>
 
-        <div style={{ marginBottom: '18px', padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border)', background: 'var(--accent-dim)', fontSize: '13px', color: 'var(--text-secondary)' }}>
-          <strong style={{ color: 'var(--text-primary)' }}>{locale === 'id' ? 'Akun demo siap pakai:' : 'Ready-to-use demo account:'}</strong>
-          <div style={{ marginTop: '6px' }}>Email: {DEMO_EMAIL}</div>
-          <div>Password: {DEMO_PASSWORD}</div>
-        </div>
+        {error && (
+          <div style={{ 
+            background: 'rgba(255, 92, 114, 0.15)', 
+            border: '1px solid var(--danger)', 
+            borderRadius: '8px', 
+            padding: '10px', 
+            marginBottom: '16px',
+            color: 'var(--danger)',
+            fontSize: '13px',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
 
-        <LoginInput onLogin={onLogin} />
+        <LoginInput onLogin={handleLogin} loading={loading} />
 
         <p className="auth-switch-text">
           {locale === 'id' ? 'Belum punya akun?' : "Don't have an account?"}{' '}

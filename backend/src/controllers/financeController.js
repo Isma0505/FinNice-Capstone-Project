@@ -1,226 +1,434 @@
-const transactions = [
-  { id: 1, type: 'income', category: 'Gaji', desc: 'Gaji bulan Juni', amount: 15000000, date: '2024-06-01', icon: 'fa-briefcase', color: '#00e6b8' },
-  { id: 2, type: 'income', category: 'Freelance', desc: 'Proyek desain UI', amount: 3500000, date: '2024-06-05', icon: 'fa-laptop-code', color: '#60a5fa' },
-  { id: 3, type: 'expense', category: 'Makanan', desc: 'Makan siang kantor', amount: 75000, date: '2024-06-15', icon: 'fa-utensils', color: '#ff7b8a' },
-  { id: 4, type: 'expense', category: 'Transportasi', desc: 'Bensin motor', amount: 150000, date: '2024-06-14', icon: 'fa-car', color: '#ffb347' },
-  { id: 5, type: 'expense', category: 'Belanja', desc: 'Beli baju baru', amount: 450000, date: '2024-06-12', icon: 'fa-bag-shopping', color: '#e056a0' },
-  { id: 6, type: 'expense', category: 'Tagihan', desc: 'Listrik & Internet', amount: 850000, date: '2024-06-10', icon: 'fa-file-invoice', color: '#a78bfa' },
-  { id: 7, type: 'income', category: 'Investasi', desc: 'Dividen saham', amount: 500000, date: '2024-06-08', icon: 'fa-chart-line', color: '#34d399' },
-  { id: 8, type: 'expense', category: 'Hiburan', desc: 'Nonton bioskop', amount: 120000, date: '2024-06-07', icon: 'fa-film', color: '#fb923c' },
-  { id: 9, type: 'expense', category: 'Kesehatan', desc: 'Obat & vitamin', amount: 200000, date: '2024-06-06', icon: 'fa-heart-pulse', color: '#f87171' },
-  { id: 10, type: 'expense', category: 'Makanan', desc: 'Grocery mingguan', amount: 650000, date: '2024-06-04', icon: 'fa-cart-shopping', color: '#ff7b8a' },
-  { id: 11, type: 'expense', category: 'Pendidikan', desc: 'Kursus online', amount: 350000, date: '2024-06-03', icon: 'fa-graduation-cap', color: '#818cf8' },
-  { id: 12, type: 'income', category: 'Gaji', desc: 'Bonus proyek', amount: 2000000, date: '2024-06-02', icon: 'fa-briefcase', color: '#00e6b8' },
-]
-
-const budgets = [
-  { id: 1, category: 'Makanan', limit: 3000000, spent: 1850000, icon: 'fa-utensils', color: '#ff7b8a' },
-  { id: 2, category: 'Transportasi', limit: 1500000, spent: 1200000, icon: 'fa-car', color: '#ffb347' },
-  { id: 3, category: 'Belanja', limit: 2000000, spent: 450000, icon: 'fa-bag-shopping', color: '#e056a0' },
-  { id: 4, category: 'Tagihan', limit: 2000000, spent: 850000, icon: 'fa-file-invoice', color: '#a78bfa' },
-  { id: 5, category: 'Hiburan', limit: 1000000, spent: 520000, icon: 'fa-film', color: '#fb923c' },
-  { id: 6, category: 'Kesehatan', limit: 800000, spent: 200000, icon: 'fa-heart-pulse', color: '#f87171' },
-  { id: 7, category: 'Pendidikan', limit: 1500000, spent: 350000, icon: 'fa-graduation-cap', color: '#818cf8' },
-]
-
-const accounts = [
-  { id: 1, name: 'BCA Tabungan', type: 'Bank', balance: 8500000, icon: 'fa-building-columns', color: '#00e6b8' },
-  { id: 2, name: 'Mandiri Giro', type: 'Bank', balance: 3200000, icon: 'fa-building-columns', color: '#60a5fa' },
-  { id: 3, name: 'GoPay', type: 'E-Wallet', balance: 1500000, icon: 'fa-wallet', color: '#00aed6' },
-  { id: 4, name: 'OVO', type: 'E-Wallet', balance: 800000, icon: 'fa-wallet', color: '#4c33cc' },
-  { id: 5, name: 'Dompet Kas', type: 'Tunai', balance: 500000, icon: 'fa-money-bill-wave', color: '#ffb347' },
-]
-
+// src/controllers/financeController.js
+const db = require('../config/database');
 const axios = require('axios');
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8001';
 
-const buildAdviceText = ({ locale, overBudgetItems, nearLimitItems, savings, savingsPercent }) => {
-  if (overBudgetItems.length > 0) {
-    const categories = overBudgetItems.map((budget) => budget.category).join(', ')
-    return {
-      type: 'danger',
-      text: locale === 'id'
-        ? `⚠️ Perhatian! Budget ${categories} sudah melebihi batas.`
-        : `⚠️ Warning! Budget for ${categories} is already over the limit.`,
-      suggestion: locale === 'id'
-        ? 'Coba kurangi pengeluaran di kategori ini atau sesuaikan budget.'
-        : 'Try reducing spending in these categories or adjust the budget.',
-    }
+// ============ SUMMARY ============
+const getSummary = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const summary = await db.getSummaryByUser(userId);
+    
+    res.json({
+      success: true,
+      summary: {
+        totalBalance: summary.balance,
+        totalIncome: summary.totalIncome,
+        totalExpense: summary.totalExpense,
+        savings: summary.balance > 0 ? summary.balance * 0.2 : 0
+      }
+    });
+  } catch (error) {
+    console.error('Error getSummary:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
+};
 
-  if (nearLimitItems.length > 0) {
-    const categories = nearLimitItems.map((budget) => budget.category).join(', ')
-    return {
-      type: 'warning',
-      text: locale === 'id'
-        ? `📊 Pengeluaran ${categories} sudah mendekati batas.`
-        : `📊 Spending for ${categories} is approaching the limit.`,
-      suggestion: locale === 'id'
-        ? 'Pantau pengeluaran di kategori ini agar tidak over budget.'
-        : 'Keep an eye on these categories so they do not go over budget.',
-    }
+// ============ TRANSACTIONS ============
+const getTransactions = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const limit = parseInt(req.query.limit) || 100;
+    const transactions = await db.getTransactionsByUser(userId, limit);
+    
+    res.json({
+      success: true,
+      transactions
+    });
+  } catch (error) {
+    console.error('Error getTransactions:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
+};
 
+const addTransaction = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const transactionData = req.body;
+    
+    // Bersihkan amount
+    transactionData.amount = Math.round(Number(transactionData.amount));
+    
+    const newTransaction = await db.addTransaction(userId, transactionData);
+    
+    res.status(201).json({
+      success: true,
+      data: newTransaction,
+      message: 'Transaksi berhasil ditambahkan'
+    });
+  } catch (error) {
+    console.error('Error addTransaction:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateTransaction = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const transactionId = req.params.id;
+    const transactionData = req.body;
+    
+    const updated = await db.updateTransaction(transactionId, userId, transactionData);
+    
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan' });
+    }
+    
+    res.json({
+      success: true,
+      data: updated,
+      message: 'Transaksi berhasil diupdate'
+    });
+  } catch (error) {
+    console.error('Error updateTransaction:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+const deleteTransaction = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const transactionId = req.params.id;
+    
+    const deleted = await db.deleteTransaction(transactionId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Transaksi berhasil dihapus'
+    });
+  } catch (error) {
+    console.error('Error deleteTransaction:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ============ BUDGETS ============
+const getBudgets = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const budgets = await db.getBudgetsByUser(userId);
+    
+    res.json({
+      success: true,
+      budgets
+    });
+  } catch (error) {
+    console.error('Error getBudgets:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const addBudget = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const budgetData = req.body;
+    
+    const newBudget = await db.addBudget(userId, budgetData);
+    
+    res.status(201).json({
+      success: true,
+      data: newBudget,
+      message: 'Budget berhasil ditambahkan'
+    });
+  } catch (error) {
+    console.error('Error addBudget:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateBudget = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const budgetId = req.params.id;
+    const budgetData = req.body;
+    
+    const updated = await db.updateBudget(budgetId, userId, budgetData);
+    
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Budget tidak ditemukan' });
+    }
+    
+    res.json({
+      success: true,
+      data: updated,
+      message: 'Budget berhasil diupdate'
+    });
+  } catch (error) {
+    console.error('Error updateBudget:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deleteBudget = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const budgetId = req.params.id;
+    
+    const deleted = await db.deleteBudget(budgetId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Budget tidak ditemukan' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Budget berhasil dihapus'
+    });
+  } catch (error) {
+    console.error('Error deleteBudget:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ============ ACCOUNTS ============
+const getAccounts = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const accounts = await db.getAccountsByUser(userId);
+    
+    res.json({
+      success: true,
+      accounts
+    });
+  } catch (error) {
+    console.error('Error getAccounts:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const addAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const accountData = req.body;
+    
+    const newAccount = await db.addAccount(userId, accountData);
+    
+    res.status(201).json({
+      success: true,
+      data: newAccount,
+      message: 'Akun berhasil ditambahkan'
+    });
+  } catch (error) {
+    console.error('Error addAccount:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const accountId = req.params.id;
+    
+    const deleted = await db.deleteAccount(accountId, userId);
+    
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Akun tidak ditemukan' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Akun berhasil dihapus'
+    });
+  } catch (error) {
+    console.error('Error deleteAccount:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ============ AI ADVICE ============
+const getAiAdvice = async (req, res) => {
+  const { budgets = [], transactions = [], locale = 'id' } = req.body || {};
+  
+  // Hitung data ringkasan lokal sebagai bagian dari fallback dan verifikasi
+  const totalIncome = transactions
+    .filter(tx => tx.type === 'income')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  
+  const totalExpense = transactions
+    .filter(tx => tx.type === 'expense')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  
+  const savings = totalIncome - totalExpense;
+  const savingsPercent = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
+  try {
+    // Panggil API Python
+    const response = await axios.post(`${AI_SERVICE_URL}/advice`, {
+      budgets,
+      transactions,
+      locale
+    }, { timeout: 4000 });
+    if (response.data && response.data.success && response.data.data) {
+      return res.json({
+        success: true,
+        data: response.data.data
+      });
+    }
+  } catch (error) {
+    console.warn(`Menggunakan fallback saran lokal karena AI Service offline/error:`, error.message);
+  }
+  
+  // LOGIKA FALLBACK (jika Python API error/offline)
+  let advice = {};
+  
   if (savings < 0) {
-    return {
+    advice = {
       type: 'danger',
-      text: locale === 'id'
-        ? `⚠️ Pengeluaran melebihi pemasukan sebesar Rp ${Math.abs(savings).toLocaleString('id-ID')}.`
-        : `⚠️ Spending is above income by Rp ${Math.abs(savings).toLocaleString('id-ID')}.`,
-      suggestion: locale === 'id'
-        ? 'Segera evaluasi pengeluaranmu.'
-        : 'Review your expenses as soon as possible.',
-    }
-  }
-
-  if (savingsPercent < 20 && savingsPercent > 0) {
-    return {
+      text: locale === 'id' 
+        ? `⚠️ Pengeluaran melebihi pemasukan Rp ${Math.abs(savings).toLocaleString('id-ID')}`
+        : `⚠️ Spending exceeds income by Rp ${Math.abs(savings).toLocaleString()}`,
+      suggestion: locale === 'id' ? 'Segera evaluasi pengeluaranmu!' : 'Review your expenses immediately!'
+    };
+  } else if (savingsPercent < 20 && savingsPercent > 0) {
+    advice = {
       type: 'warning',
       text: locale === 'id'
-        ? `💡 Tabungan hanya ${Math.round(savingsPercent)}% dari pemasukan.`
-        : `💡 Savings are only ${Math.round(savingsPercent)}% of income.`,
-      suggestion: locale === 'id'
-        ? 'Targetkan minimal 20% untuk tabungan.'
-        : 'Target at least 20% of your income for savings.',
-    }
-  }
-
-  if (savings > 0) {
-    return {
+        ? `💡 Tabungan hanya ${Math.round(savingsPercent)}% dari pemasukan`
+        : `💡 Savings are only ${Math.round(savingsPercent)}% of income`,
+      suggestion: locale === 'id' ? 'Targetkan minimal 20% untuk tabungan' : 'Target at least 20% for savings'
+    };
+  } else if (savings > 0) {
+    advice = {
       type: 'success',
       text: locale === 'id'
-        ? `🎉 Bagus! Kamu menabung Rp ${savings.toLocaleString('id-ID')} bulan ini.`
-        : `🎉 Nice! You saved Rp ${savings.toLocaleString('id-ID')} this month.`,
-      suggestion: locale === 'id'
-        ? 'Pertahankan kebiasaan baik ini.'
-        : 'Keep up the good habit.',
-    }
+        ? `🎉 Bagus! Kamu menabung Rp ${savings.toLocaleString('id-ID')}`
+        : `🎉 Great! You saved Rp ${savings.toLocaleString()}`,
+      suggestion: locale === 'id' ? 'Pertahankan kebiasaan baik ini!' : 'Keep up the good habit!'
+    };
+  } else {
+    advice = {
+      type: 'info',
+      text: locale === 'id' ? '🤖 Siap membantu keuanganmu' : '🤖 Ready to help your finances',
+      suggestion: locale === 'id' ? 'Tambah transaksi untuk saran lebih akurat' : 'Add more transactions for better advice'
+    };
   }
-
-  return {
-    type: 'info',
-    text: locale === 'id'
-      ? '🤖 Saya siap membantu menganalisis keuanganmu.'
-      : '🤖 I am ready to help analyze your finances.',
-    suggestion: locale === 'id'
-      ? 'Tambah transaksi dan budget untuk saran yang lebih akurat.'
-      : 'Add more transactions and budgets for more accurate advice.',
-  }
-}
-
-const getTotalIncome = () => transactions.filter((transaction) => transaction.type === 'income').reduce((sum, transaction) => sum + transaction.amount, 0)
-
-const getTotalExpense = () => transactions.filter((transaction) => transaction.type === 'expense').reduce((sum, transaction) => sum + transaction.amount, 0)
-
-const computeLocalAdvice = (incomingBudgets, incomingTransactions, locale = 'id') => {
-  const budgetSource = Array.isArray(incomingBudgets) && incomingBudgets.length > 0 ? incomingBudgets : budgets
-  const transactionSource = Array.isArray(incomingTransactions) && incomingTransactions.length > 0 ? incomingTransactions : transactions
-
-  const overBudgetItems = []
-  const nearLimitItems = []
-
-  budgetSource.forEach((budget) => {
-    const spent = transactionSource
-      .filter((transaction) => transaction.type === 'expense' && transaction.category === budget.category)
-      .reduce((sum, transaction) => sum + transaction.amount, 0)
-
-    const percent = budget.limit > 0 ? (spent / budget.limit) * 100 : 0
-
-    if (spent > budget.limit) {
-      overBudgetItems.push({ ...budget, spent, percent })
-    } else if (percent >= 80) {
-      nearLimitItems.push({ ...budget, spent, percent })
-    }
-  })
-
-  const totalIncome = transactionSource
-    .filter((transaction) => transaction.type === 'income')
-    .reduce((sum, transaction) => sum + transaction.amount, 0)
-
-  const totalExpense = transactionSource
-    .filter((transaction) => transaction.type === 'expense')
-    .reduce((sum, transaction) => sum + transaction.amount, 0)
-
-  const savings = totalIncome - totalExpense
-  const savingsPercent = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
-  const advice = buildAdviceText({ locale, overBudgetItems, nearLimitItems, savings, savingsPercent })
-
-  return {
+  res.json({
     success: true,
     data: {
-      advice: { ...advice },
-      summary: {
-        totalIncome,
-        totalExpense,
-        savings,
-        savingsPercent,
-        overBudgetItems,
-        nearLimitItems,
-      },
-    },
-  }
-}
-
-const getAiAdvice = async (req, res) => {
-  const { budgets: incomingBudgets, transactions: incomingTransactions, locale = 'id' } = req.body || {}
-
-  // Try proxying to external AI service first
-  try {
-    const resp = await axios.post(`${AI_SERVICE_URL}/advice`, { budgets: incomingBudgets, transactions: incomingTransactions, locale }, { timeout: 3000 })
-    if (resp && resp.data) {
-      return res.json(resp.data)
+      advice,
+      summary: { totalIncome, totalExpense, savings, savingsPercent }
     }
-  } catch (err) {
-    console.warn('AI service proxy failed, falling back to local logic:', err.message || err)
+  });
+};
+
+const getAiModelStatus = async (req, res) => {
+  try {
+    // Panggil /health ke FastAPI
+    const response = await axios.get(`${AI_SERVICE_URL}/health`, { timeout: 3000 });
+    
+    // Coba ambil metadata jika ada
+    let metadata = null;
+    try {
+      const metaRes = await axios.get(`${AI_SERVICE_URL}/metadata`, { timeout: 2000 });
+      if (metaRes.data && metaRes.data.success) {
+        metadata = metaRes.data.metadata;
+      } else if (metaRes.data && metaRes.data.metadata) {
+        metadata = metaRes.data.metadata;
+      }
+    } catch (metaErr) {
+      console.warn('Gagal memuat metadata AI, tetapi service tetap online:', metaErr.message);
+    }
+    res.json({
+      success: true,
+      data: {
+        status: 'available',
+        message: 'AI service is ready',
+        metadata: metadata
+      }
+    });
+  } catch (error) {
+    console.warn(`AI Service offline (${AI_SERVICE_URL}):`, error.message);
+    res.json({
+      success: true,
+      data: {
+        status: 'unavailable',
+        message: 'AI service is offline (fallback active)'
+      }
+    });
   }
+};
 
-  // Fallback to local computation
-  const local = computeLocalAdvice(incomingBudgets, incomingTransactions, locale)
-  return res.json(local)
-}
-
-const getSummary = (req, res) => {
-  const income = getTotalIncome()
-  const expense = getTotalExpense()
-  const balance = income - expense
-  const savings = balance * 0.2
-
+const getAiModelPrediction = async (req, res) => {
+  try {
+    const response = await axios.post(`${AI_SERVICE_URL}/predict`, req.body, { timeout: 4000 });
+    if (response.data && response.data.success) {
+      return res.json({
+        success: true,
+        data: response.data.data
+      });
+    }
+    if (response.data && response.data.prediction) {
+      return res.json({
+        success: true,
+        data: response.data
+      });
+    }
+  } catch (error) {
+    console.warn(`Menggunakan fallback prediksi karena AI Service offline/error:`, error.message);
+  }
+  // Fallback prediction
   res.json({
     success: true,
-    summary: {
-      totalBalance: balance,
-      totalIncome: income,
-      totalExpense: expense,
-      savings,
-    },
-  })
-}
+    data: {
+      prediction: 'normal',
+      probabilities: [0.8, 0.2],
+      is_fallback: true
+    }
+  });
+};
 
-const getTransactions = (req, res) => {
+const getAiModelRecommendation = async (req, res) => {
+  try {
+    const response = await axios.post(`${AI_SERVICE_URL}/recommend`, req.body, { timeout: 4000 });
+    if (response.data && response.data.success) {
+      return res.json({
+        success: true,
+        data: response.data
+      });
+    }
+    if (response.data && response.data.recommendation) {
+      return res.json({
+        success: true,
+        data: {
+          recommendations: [response.data.recommendation]
+        }
+      });
+    }
+  } catch (error) {
+    console.warn(`Menggunakan fallback rekomendasi lokal karena AI Service offline/error atau endpoint /recommend tidak didukung:`, error.message);
+  }
+  // Fallback recommendations
   res.json({
     success: true,
-    transactions,
-  })
-}
+    data: {
+      recommendations: [
+        'Buat budget bulanan untuk mengontrol pengeluaran',
+        'Catat semua pengeluaran kecil agar tidak boncos',
+        'Sisihkan minimal 10%-20% dari pendapatan untuk dana darurat'
+      ],
+      is_fallback: true
+    }
+  });
+};
 
-const getBudgets = (req, res) => {
-  res.json({
-    success: true,
-    budgets,
-  })
-}
-
-const getAccounts = (req, res) => {
-  res.json({
-    success: true,
-    accounts,
-  })
-}
-
+// ============ EXPORTS ============
 module.exports = {
   getSummary,
   getTransactions,
+  addTransaction,
+  updateTransaction,
+  deleteTransaction,
   getBudgets,
+  addBudget,
+  updateBudget,
+  deleteBudget,
   getAccounts,
+  addAccount,
+  deleteAccount,
   getAiAdvice,
-}
+  getAiModelStatus,
+  getAiModelPrediction,
+  getAiModelRecommendation
+};

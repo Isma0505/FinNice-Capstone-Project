@@ -3,7 +3,7 @@ import { useLocale } from '../../contexts/LocaleContext';
 import useInput from '../../hooks/useInput';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaShieldAlt } from 'react-icons/fa';
 
-function RegisterInput({ onRegister }) {
+function RegisterInput({ onRegister, loading }) {  // ← tambah loading prop
   const { locale } = useLocale();
   const [name, onNameChange] = useInput('');
   const [email, onEmailChange] = useInput('');
@@ -91,6 +91,7 @@ function RegisterInput({ onRegister }) {
           value={name}
           onChange={onNameChange}
           required
+          disabled={loading}
         />
       </div>
       
@@ -102,6 +103,7 @@ function RegisterInput({ onRegister }) {
           value={email}
           onChange={onEmailChange}
           required
+          disabled={loading}
         />
       </div>
       
@@ -114,12 +116,14 @@ function RegisterInput({ onRegister }) {
             value={password}
             onChange={onPasswordChange}
             required
+            disabled={loading}
           />
           <button
             type="button"
             className="toggle-pw"
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
+            disabled={loading}
           >
             {showPassword ? <FaEyeSlash /> : <FaEye />}
           </button>
@@ -150,12 +154,14 @@ function RegisterInput({ onRegister }) {
           value={confirmPassword}
           onChange={onConfirmPasswordChange}
           required
+          disabled={loading}
         />
         <button
           type="button"
           className="toggle-pw"
           onClick={() => setShowConfirmPassword((value) => !value)}
           aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+          disabled={loading}
         >
           {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
         </button>
@@ -166,6 +172,7 @@ function RegisterInput({ onRegister }) {
           type="checkbox"
           checked={agreed}
           onChange={(e) => setAgreed(e.target.checked)}
+          disabled={loading}
         />
         <span>
           {locale === 'id'
@@ -174,8 +181,8 @@ function RegisterInput({ onRegister }) {
         </span>
       </label>
       
-      <button type="submit" className="btn-primary">
-        {locale === 'id' ? 'Daftar' : 'Register'}
+      <button type="submit" className="btn-primary" disabled={loading}>
+        {loading ? (locale === 'id' ? 'Memproses...' : 'Processing...') : (locale === 'id' ? 'Daftar' : 'Register')}
       </button>
     </form>
   );

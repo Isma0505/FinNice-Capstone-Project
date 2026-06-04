@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { useLocale } from '../../contexts/LocaleContext';
 import { formatRupiah } from '../../utils/helpers';
 import { getAIAdvice } from '../../utils/api';
@@ -6,11 +6,13 @@ import { getAIAdvice } from '../../utils/api';
 function AIAdviceWidget({ budgets, transactions }) {
   const { locale } = useLocale();
   const [advice, setAdvice] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const hasLoaded = useRef(false);
 
   // Generate saran dari AI
   const generateAdvice = async () => {
     setLoading(true);
+    setAdvice(null); // Reset advice biar keliatan loading
 
     const totalIncome = transactions
       .filter(tx => tx.type === 'income')
@@ -27,9 +29,8 @@ function AIAdviceWidget({ budgets, transactions }) {
       return;
     }
     
-    // Simulasi delay (nanti panggil API real)
+    // Fallback logic
     setTimeout(() => {
-      // Cari budget yang over
       const overBudgetItems = [];
       const nearLimitItems = [];
       
@@ -85,18 +86,20 @@ function AIAdviceWidget({ budgets, transactions }) {
     }, 500);
   };
 
+  // Hanya generate pertama kali
   useEffect(() => {
-    if (budgets.length > 0 || transactions.length > 0) {
+    if ((budgets.length > 0 || transactions.length > 0) && !hasLoaded.current) {
+      hasLoaded.current = true;
       generateAdvice();
-    } else {
-      setLoading(false);
+    } else if (budgets.length === 0 && transactions.length === 0 && !hasLoaded.current) {
+      hasLoaded.current = true;
       setAdvice({
         text: '👋 Selamat datang di FinNice!',
         suggestion: 'Mulai dengan menambahkan transaksi dan budget untuk mendapatkan saran keuangan.',
         type: 'info'
       });
     }
-  }, [budgets, transactions]);
+  }, []);
 
   const getTypeStyles = () => {
     switch (advice?.type) {
@@ -113,12 +116,13 @@ function AIAdviceWidget({ budgets, transactions }) {
 
   const styles = getTypeStyles();
 
+  // Tampilkan loading saat sedang refresh
   if (loading) {
     return (
       <div className="stat-card" style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '20px', color: 'var(--accent)' }}></i>
-          <span>AI sedang menganalisis keuanganmu...</span>
+          <span>{locale === 'id' ? 'AI sedang menganalisis keuanganmu...' : 'AI is analyzing your finances...'}</span>
         </div>
       </div>
     );
@@ -154,8 +158,11 @@ function AIAdviceWidget({ budgets, transactions }) {
             color: styles.color, 
             cursor: 'pointer',
             padding: '4px',
-            borderRadius: '6px'
+            borderRadius: '6px',
+            transition: 'transform 0.2s'
           }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'rotate(180deg)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'rotate(0deg)'}
           title={locale === 'id' ? 'Refresh saran' : 'Refresh advice'}
         >
           <i className="fa-solid fa-rotate-right"></i>
@@ -165,4 +172,4 @@ function AIAdviceWidget({ budgets, transactions }) {
   );
 }
 
-export default AIAdviceWidget;
+export default memo(AIAdviceWidget);

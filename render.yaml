@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: finnice-backend
+    env: node
+    repo: https://github.com/Isma0505/FinNice-Capstone-Project.git
+    branch: main
+    buildCommand: cd back-end && npm install
+    startCommand: cd back-end/src && npm start
+    healthCheckPath: /finance/ai/status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+
+  - type: web
+    name: finnice-ai-service
+    env: python
+    repo: https://github.com/Isma0505/FinNice-Capstone-Project.git
+    branch: main
+    buildCommand: cd ai-service && python -m pip install -r requirements.txt
+    startCommand: cd ai-service && uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: PYTHONUNBUFFERED
+        value: '1'

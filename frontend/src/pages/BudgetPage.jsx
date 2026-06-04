@@ -24,7 +24,7 @@ function BudgetPage() {
   const getSpentByCategory = (category) => {
     return transactions
       .filter(tx => tx.type === 'expense' && tx.category === category)
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
   };
 
   const handleAddBudget = async (newBudget) => {
@@ -38,8 +38,9 @@ function BudgetPage() {
 
   if (loading) return <p>Loading...</p>;
 
-  const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
-  const totalSpent = budgets.reduce((sum, b) => sum + getSpentByCategory(b.category), 0);
+  // Perbaikan: konversi limit ke Number
+  const totalBudget = budgets.reduce((sum, b) => sum + (Number(b.limit) || 0), 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + (Number(getSpentByCategory(b.category)) || 0), 0);
   const totalPercent = totalBudget > 0 ? Math.min(100, Math.round((totalSpent / totalBudget) * 100)) : 0;
 
   return (

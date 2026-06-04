@@ -1,5 +1,8 @@
 // Format Rupiah
 export const formatRupiah = (amount) => {
+  if (isNaN(amount) || amount === null || amount === undefined) {
+    return 'Rp 0';
+  }
   return 'Rp ' + Math.abs(amount).toLocaleString('id-ID');
 };
 
@@ -22,14 +25,14 @@ export const formatDateForFilter = (date) => {
 export const getTotalIncome = (transactions) => {
   return transactions
     .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 };
 
 // Hitung total pengeluaran
 export const getTotalExpense = (transactions) => {
   return transactions
     .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
 };
 
 // Hitung saldo
@@ -66,8 +69,8 @@ export const getMonthlyTrendData = (transactions, months = 6) => {
       return txDate.getMonth() === date.getMonth() && txDate.getFullYear() === year;
     });
     
-    const income = monthTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
-    const expense = monthTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+    const income = monthTransactions.filter(tx => tx.type === 'income').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
+    const expense = monthTransactions.filter(tx => tx.type === 'expense').reduce((s, tx) => s + (Number(tx.amount) || 0), 0);
     
     result.push({
       month: monthName,
@@ -112,8 +115,8 @@ export const exportToPDF = async (transactions, startDate, endDate, totalIncome,
     formatDate(tx.date),
     tx.category,
     tx.description,
-    tx.type === 'income' ? `Rp ${tx.amount.toLocaleString('id-ID')}` : '',
-    tx.type === 'expense' ? `Rp ${tx.amount.toLocaleString('id-ID')}` : '',
+    tx.type === 'income' ? `Rp ${Number(tx.amount).toLocaleString('id-ID')}` : '',
+    tx.type === 'expense' ? `Rp ${Number(tx.amount).toLocaleString('id-ID')}` : '',
   ]);
   
   autoTable.default(doc, {

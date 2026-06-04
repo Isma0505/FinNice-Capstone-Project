@@ -46,13 +46,17 @@ function BudgetModal({ isOpen, onClose, onSubmit }) {
       <form onSubmit={handleSubmit}>
         <div className="input-group">
           <select name="category" value={formData.category} onChange={handleChange} required>
-            <option value="Makanan">Makanan</option>
-            <option value="Transportasi">Transportasi</option>
-            <option value="Belanja">Belanja</option>
-            <option value="Tagihan">Tagihan</option>
-            <option value="Hiburan">Hiburan</option>
-            <option value="Kesehatan">Kesehatan</option>
-            <option value="Pendidikan">Pendidikan</option>
+            {[
+              { key: 'Makanan', id: 'Makanan', en: 'Food' },
+              { key: 'Transportasi', id: 'Transportasi', en: 'Transport' },
+              { key: 'Belanja', id: 'Belanja', en: 'Shopping' },
+              { key: 'Tagihan', id: 'Tagihan', en: 'Bills & Fees' },
+              { key: 'Hiburan', id: 'Hiburan', en: 'Entertainment' },
+              { key: 'Kesehatan', id: 'Kesehatan', en: 'Health' },
+              { key: 'Pendidikan', id: 'Pendidikan', en: 'Education' },
+            ].map(cat => (
+              <option key={cat.key} value={cat.key}>{locale === 'id' ? cat.id : cat.en}</option>
+            ))}
           </select>
         </div>
 

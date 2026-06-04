@@ -91,6 +91,22 @@ python app.py
 *   `POST /predict`: Prediksi anomali transaksi menggunakan Decision Tree.
 *   `POST /advice`: Saran keuangan berbasis aturan anggaran dan transaksi.
 
+#### 🔄 Menjalankan di Port Berbeda
+Jika port `8001` (atau port lainnya) sudah digunakan oleh aplikasi lain, Anda dapat menjalankan layanan ini di port alternatif dengan mengatur *environment variable* `AI_SERVICE_PORT` atau `PORT` sebelum menjalankan aplikasi:
+
+**Windows (PowerShell):**
+```powershell
+$env:AI_SERVICE_PORT = '8002'
+python app.py
+```
+
+**Linux / macOS:**
+```bash
+AI_SERVICE_PORT=8002 python app.py
+```
+
+Anda juga dapat mengatur host secara kustom dengan *environment variable* `AI_SERVICE_HOST` jika diperlukan.
+
 ---
 
 ## 🧪 Pengujian & Pelatihan Ulang

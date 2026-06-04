@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useLocale } from '../contexts/LocaleContext';
 import { useTheme } from '../contexts/ThemeContext';
 import RegisterInput from '../components/auth/RegisterInput';
+import { register } from '../utils/api';
 import { FaMoon, FaSun } from 'react-icons/fa';
 import { FiGlobe } from 'react-icons/fi';
 import { HiOutlineLanguage } from 'react-icons/hi2';
@@ -8,6 +10,24 @@ import { HiOutlineLanguage } from 'react-icons/hi2';
 function RegisterPage({ onRegister, onSwitchToLogin }) {
   const { locale, toggleLocale } = useLocale();
   const { theme, toggleTheme } = useTheme();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async (userData) => {
+    setLoading(true);
+    setError('');
+    
+    const result = await register(userData);
+    
+    if (result.success) {
+      // Registrasi berhasil, langsung login atau arahkan ke login
+      onRegister({ name: userData.name, email: userData.email });
+    } else {
+      setError(result.message || 'Registrasi gagal');
+    }
+    
+    setLoading(false);
+  };
 
   return (
     <div className="auth-container">
@@ -46,7 +66,22 @@ function RegisterPage({ onRegister, onSwitchToLogin }) {
           <p>{locale === 'id' ? 'Buat akun baru dan mulai kelola keuangan' : 'Create a new account and start managing finances'}</p>
         </div>
 
-        <RegisterInput onRegister={onRegister} />
+        {error && (
+          <div style={{ 
+            background: 'rgba(255, 92, 114, 0.15)', 
+            border: '1px solid var(--danger)', 
+            borderRadius: '8px', 
+            padding: '10px', 
+            marginBottom: '16px',
+            color: 'var(--danger)',
+            fontSize: '13px',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
+        <RegisterInput onRegister={handleRegister} loading={loading} />
 
         <p className="auth-switch-text">
           {locale === 'id' ? 'Sudah punya akun?' : 'Already have an account?'}{' '}

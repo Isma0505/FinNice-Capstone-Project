@@ -8,7 +8,7 @@ Project ini terdiri dari 3 bagian:
 
 - `back-end/` untuk bagian server dan data
 - `frontend/` untuk tampilan aplikasi
-- `ai-service/` untuk fitur AI
+- `ai-service/` untuk fitur AI model dan rekomendasi
 
 ## 2. Prasyarat
 
@@ -35,6 +35,8 @@ Jalankan langkah ini dari folder utama project.
 
 ```bash
 cd back-end
+npm install -g nodemon
+npm --prefix src install dotenv
 npm install
 ```
 
@@ -47,7 +49,8 @@ npm install
 
 ### AI Service
 
-Untuk bagian AI, buat ruang kerja Python dulu supaya file install-nya tidak bercampur dengan project lain.
+Untuk bagian AI, gunakan virtual environment yang sudah ada di folder `ai-service`.
+Kalau belum ada, baru buat dulu satu kali supaya file install-nya tidak bercampur dengan project lain.
 
 ```bash
 cd ../ai-service
@@ -108,7 +111,7 @@ http://localhost:5173
 
 ### AI Service
 
-Jalankan bagian AI dengan perintah ini:
+Jalankan bagian AI model service dengan perintah ini:
 
 ```bash
 cd ai-service
@@ -116,7 +119,7 @@ cd ai-service
 python app.py
 ```
 
-Bagian AI ini biasanya berjalan di port 8001.
+Bagian AI ini berjalan di port 8001.
 
 ## 5. Urutan yang disarankan
 
@@ -168,4 +171,10 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 python app.py
 ```
+
+## 8. Catatan alur AI terbaru
+
+- Frontend mengirim request AI ke backend di port 5000.
+- Backend meneruskan request ke AI service di port 8001.
+- Model terbaru yang dipakai service ada di folder `Model/` dan dataset terbaru ada di folder `Data/`.
 

@@ -27,7 +27,10 @@ app.get('/', (req, res) => {
       transactions: 'GET /finance/transactions (perlu token)',
       budgets: 'GET /finance/budgets (perlu token)',
       accounts: 'GET /finance/accounts (perlu token)',
-      aiAdvice: 'POST /finance/advice'
+      aiAdvice: 'POST /finance/advice',
+      aiModelStatus: 'GET /finance/ai/status',
+      aiModelPredict: 'POST /finance/ai/predict',
+      aiModelRecommend: 'POST /finance/ai/recommend'
     }
   });
 });
@@ -56,8 +59,17 @@ process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception thrown:', err);
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} sudah digunakan. Coba jalankan dengan PORT berbeda, mis: $env:PORT='5001' (PowerShell) atau PORT=5001 (bash).`);
+    // Exit with non-zero so process managers (nodemon) don't keep retrying silently
+    process.exit(1);
+  }
+  console.error('Server error:', err);
 });
 
 module.exports = app;
