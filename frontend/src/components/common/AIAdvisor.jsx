@@ -9,6 +9,19 @@ function AIAdvisor({ isOpen, onClose, budgets, transactions, totalExpense, total
   const [advice, setAdvice] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+  console.log('Transactions:', transactions);
+
+  transactions.forEach(tx => {
+    console.log(
+      'Amount:',
+      tx.amount,
+      'Type:',
+      typeof tx.amount
+    );
+  });
+}, [transactions]);
+
   // Generate saran dari AI (simulasi, nanti panggil API real)
   const generateAdvice = async () => {
     setLoading(true);
@@ -31,7 +44,7 @@ function AIAdvisor({ isOpen, onClose, budgets, transactions, totalExpense, total
         // Hitung spent untuk kategori ini dari transaksi
         const spent = transactions
           .filter(tx => tx.type === 'expense' && tx.category === budget.category)
-          .reduce((sum, tx) => sum + tx.amount, 0);
+          .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
         
         const percent = (spent / budget.limit) * 100;
         
@@ -122,14 +135,21 @@ function AIAdvisor({ isOpen, onClose, budgets, transactions, totalExpense, total
   const styles = getTypeStyles();
 
   // Hitung total pemasukan & pengeluaran
-  const totalPengeluaran = transactions
+  // Pastikan amount selalu number
+const cleanTransactions = transactions.map(tx => ({
+  ...tx,
+  amount: Number(tx.amount) || 0
+}));
+
+// Hitung total pemasukan & pengeluaran
+  const totalPengeluaran = cleanTransactions
     .filter(tx => tx.type === 'expense')
     .reduce((sum, tx) => sum + tx.amount, 0);
-  
-  const totalPemasukan = transactions
+
+  const totalPemasukan = cleanTransactions
     .filter(tx => tx.type === 'income')
     .reduce((sum, tx) => sum + tx.amount, 0);
-  
+
   const savings = totalPemasukan - totalPengeluaran;
 
   return (
