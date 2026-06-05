@@ -217,6 +217,24 @@ const addAccount = async (req, res) => {
   }
 };
 
+const updateAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const accountId = req.params.id;
+    const { name, balance } = req.body;
+    
+    const updated = await db.updateAccount(accountId, userId, { name, balance });
+    
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Akun tidak ditemukan' });
+    }
+    
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const deleteAccount = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -426,6 +444,7 @@ module.exports = {
   deleteBudget,
   getAccounts,
   addAccount,
+  updateAccount,
   deleteAccount,
   getAiAdvice,
   getAiModelStatus,

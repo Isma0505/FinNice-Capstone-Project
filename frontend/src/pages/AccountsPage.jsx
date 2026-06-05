@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useLocale } from '../contexts/LocaleContext';
-import { getAccounts, addAccount, deleteAccount } from '../utils/api';
+import { getAccounts, addAccount, deleteAccount, updateAccount } from '../utils/api';
 import { formatRupiah } from '../utils/helpers';
 import AccountList from '../components/accounts/AccountList';
 import AccountModal from '../components/accounts/AccountModal';
+import EditAccountModal from '../components/accounts/EditAccountModal';  // ← tambah ini
 
 function AccountsPage() {
   const { locale } = useLocale();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);  // ← tambah
+  const [editingAccount, setEditingAccount] = useState(null);  // ← tambah
 
   const fetchAccounts = async () => {
     const result = await getAccounts();
@@ -24,11 +27,21 @@ function AccountsPage() {
     fetchAccounts();
   };
 
+  const handleUpdateAccount = async (updatedAccount) => {  // ← tambah
+    await updateAccount(updatedAccount.id, updatedAccount);
+    fetchAccounts();
+  };
+
   const handleDeleteAccount = async (id) => {
     if (window.confirm(locale === 'id' ? 'Hapus akun ini?' : 'Delete this account?')) {
       await deleteAccount(id);
       fetchAccounts();
     }
+  };
+
+  const handleEditClick = (account) => {  // ← tambah
+    setEditingAccount(account);
+    setShowEditModal(true);
   };
 
   useEffect(() => {
@@ -60,12 +73,26 @@ function AccountsPage() {
         </div>
       </div>
 
-      <AccountList accounts={accounts} onDelete={handleDeleteAccount} />
+      <AccountList 
+        accounts={accounts} 
+        onDelete={handleDeleteAccount}
+        onEdit={handleEditClick}  // ← tambah ini
+      />
 
       <AccountModal 
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleAddAccount}
+      />
+
+      <EditAccountModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingAccount(null);
+        }}
+        account={editingAccount}
+        onUpdate={handleUpdateAccount}
       />
     </div>
   );

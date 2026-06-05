@@ -287,6 +287,17 @@ const addAccount = async (userId, accountData) => {
   return result.rows[0];
 };
 
+const updateAccount = async (accountId, userId, { name, balance }) => {
+  const query = `
+    UPDATE accounts
+    SET name = $1, balance = $2, updated_at = NOW()
+    WHERE id = $3 AND user_id = $4
+    RETURNING id, name, type, provider, account_number, balance, icon, color, image
+  `;
+  const result = await pool.query(query, [name, balance, accountId, userId]);
+  return result.rows[0];
+};
+
 const updateAccountBalance = async (accountId, newBalance) => {
   const query = `
     UPDATE accounts
@@ -356,6 +367,7 @@ module.exports = {
   // Accounts
   getAccountsByUser,
   addAccount,
+  updateAccount,
   updateAccountBalance,
   deleteAccount,
   // Summary

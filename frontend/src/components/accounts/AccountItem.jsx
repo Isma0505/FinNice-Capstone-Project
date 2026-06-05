@@ -44,7 +44,7 @@ const getFallbackImage = (account) => {
   return '';
 };
 
-function AccountItem({ account, onDelete }) {
+function AccountItem({ account, onDelete, onEdit }) {  // ← tambah props onEdit
   const imageSrc = getFallbackImage(account);
 
   return (
@@ -53,11 +53,31 @@ function AccountItem({ account, onDelete }) {
         position: 'absolute', 
         top: '12px', 
         right: '12px',
-        cursor: 'pointer',
-        color: 'var(--text-secondary)',
-        padding: '4px'
-      }} onClick={() => onDelete(account.id)}>
-        <i className="fa-solid fa-trash"></i>
+        display: 'flex',
+        gap: '8px',
+        cursor: 'pointer'
+      }}>
+        {/* Tombol Edit */}
+        <div 
+          style={{ 
+            color: 'var(--accent)',
+            padding: '4px'
+          }} 
+          onClick={() => onEdit(account)}
+        >
+          <i className="fa-solid fa-pen"></i>
+        </div>
+        
+        {/* Tombol Delete */}
+        <div 
+          style={{ 
+            color: 'var(--text-secondary)',
+            padding: '4px'
+          }} 
+          onClick={() => onDelete(account.id)}
+        >
+          <i className="fa-solid fa-trash"></i>
+        </div>
       </div>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>

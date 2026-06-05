@@ -3,7 +3,7 @@
 import AccountItem from './AccountItem';
 import { useLocale } from '../../contexts/LocaleContext';
 
-function AccountList({ accounts, onDelete }) {
+function AccountList({ accounts, onDelete, onEdit }) {  // ← tambah onEdit di parameter
   const { locale } = useLocale();
 
   if (accounts.length === 0) {
@@ -19,7 +19,12 @@ function AccountList({ accounts, onDelete }) {
   return (
     <div className="grid-stats">
       {accounts.map(account => (
-        <AccountItem key={account.id} account={account} onDelete={onDelete} />
+        <AccountItem 
+          key={account.id} 
+          account={account} 
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
       ))}
     </div>
   );

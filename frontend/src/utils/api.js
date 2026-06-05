@@ -349,3 +349,15 @@ export const saveData = (data) => {
 export const getDataStorageKey = (email) => {
   return `finnice_data_${email}`;
 };
+
+export const updateAccount = async (id, account) => {
+  try {
+    const result = await authFetch(`/finance/accounts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(account),
+    });
+    return { error: false, data: result.data };
+  } catch (error) {
+    return { error: true, message: error.message };
+  }
+};

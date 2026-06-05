@@ -23,6 +23,7 @@ router.delete('/budgets/:id', auth.verifyToken, asyncWrapper.wrap(financeControl
 router.get('/accounts', auth.verifyToken, asyncWrapper.wrap(financeController.getAccounts))
 router.post('/accounts', auth.verifyToken, asyncWrapper.wrap(financeController.addAccount))
 router.delete('/accounts/:id', auth.verifyToken, asyncWrapper.wrap(financeController.deleteAccount))
+router.put('/accounts/:id', auth.verifyToken, asyncWrapper.wrap(financeController.updateAccount));
 
 // AI
 router.post('/advice', asyncWrapper.wrap(financeController.getAiAdvice))
