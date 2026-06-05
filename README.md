@@ -6,7 +6,7 @@ Panduan ini dibuat supaya project FinNice bisa dijalankan dengan mudah, tanpa ha
 
 Project ini terdiri dari 3 bagian:
 
-- `back-end/` untuk bagian server dan data
+- `backend/` untuk bagian server dan data
 - `frontend/` untuk tampilan aplikasi
 - `ai-service/` untuk fitur AI model dan rekomendasi
 
@@ -34,7 +34,7 @@ Jalankan langkah ini dari folder utama project.
 ### Backend
 
 ```bash
-cd back-end
+cd backend
 npm install -g nodemon
 npm --prefix src install dotenv
 npm install
@@ -76,7 +76,7 @@ python -m pip install -r requirements.txt
 Kalau baru pertama kali, jalankan ini dulu:
 
 ```bash
-cd back-end
+cd backend
 npm run setup-db
 npm run dev
 ```
@@ -84,7 +84,7 @@ npm run dev
 Kalau database sudah pernah disiapkan, cukup jalankan:
 
 ```bash
-cd back-end
+cd backend
 npm run dev
 ```
 
@@ -152,7 +152,7 @@ Folder itu tidak perlu ikut dikirim karena nanti dibuat ulang di komputer masing
 Kalau mau mulai dari awal, ikuti urutan ini:
 
 ```bash
-cd back-end
+cd backend
 npm install
 npm run setup-db
 npm run dev
