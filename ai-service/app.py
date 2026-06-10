@@ -132,15 +132,44 @@ def build_advice(locale, budgets, transactions):
     budgets = budgets or []
     transactions = transactions or []
     for b in budgets:
-        spent = sum(t.get('amount', 0) for t in transactions if t.get('type') == 'expense' and t.get('category') == b.get('category'))
-        percent = (spent / b.get('limit', 1)) * 100 if b.get('limit', 0) else 0
-        if spent > b.get('limit', 0):
-            over.append({**b, 'spent': spent, 'percent': percent})
-        elif percent >= 80:
-            near.append({**b, 'spent': spent, 'percent': percent})
+        spent = sum(
+        float(t.get('amount', 0) or 0)
+        for t in transactions
+        if t.get('type') == 'expense'
+        and t.get('category') == b.get('category')
+    )
 
-    total_income = sum(t.get('amount', 0) for t in transactions if t.get('type') == 'income')
-    total_expense = sum(t.get('amount', 0) for t in transactions if t.get('type') == 'expense')
+    try:
+        limit = float(b.get('limit', 0) or 0)
+    except (ValueError, TypeError):
+        limit = 0
+
+    percent = (spent / limit) * 100 if limit > 0 else 0
+
+    if spent > limit:
+        over.append({
+            **b,
+            'spent': spent,
+            'percent': percent
+        })
+    elif percent >= 80:
+        near.append({
+            **b,
+            'spent': spent,
+            'percent': percent
+        })
+
+    total_income = sum(
+        float(t.get('amount', 0) or 0)
+        for t in transactions
+        if t.get('type') == 'income'
+    )
+
+    total_expense = sum(
+        float(t.get('amount', 0) or 0)
+        for t in transactions
+        if t.get('type') == 'expense'
+    )
     savings = total_income - total_expense
     savings_percent = (savings / total_income) * 100 if total_income > 0 else 0
 
